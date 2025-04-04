@@ -4,9 +4,8 @@ import 'package:provider/provider.dart';
 
 import '../../models/exercise.dart';
 import '../../models/workout_set.dart';
-import '../../providers/exercise_provider.dart';
 import '../../widgets/workout_table.dart';
-import '../../providers/weekday_provider.dart';
+import '../../providers/exercise_provider.dart';
 import '../../providers/workout_set_provider.dart';
 
 class StartSessionScreen extends StatelessWidget {
@@ -50,14 +49,14 @@ class StartSessionScreen extends StatelessWidget {
     final workoutSetProvider = Provider.of<WorkoutSetProvider>(context);
     List<Exercise> exercises = workoutData['exercises']
         .map<Exercise>((id) => exerciseProvider.getExerciseById(id)!)
-        .where((Exercise exercise) =>
-            exercise.id.isNotEmpty) // Filter out default empty exercises
+        .where((Exercise exercise) => exercise.id.isNotEmpty)
         .toList();
     int exercisesLeft = exercises.where((Exercise exercise) {
       List<WorkoutSet> sets = workoutSetProvider.getWorkoutSetsForExercise(
           workoutData['id'], exercise.id);
       return sets.any((set) => !set.isCompleted.contains(_getTodayDate()));
     }).length;
+    // final exerciseIds = workoutData['exercises'];
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -119,35 +118,18 @@ class StartSessionScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Consumer<WeekdayProvider>(builder: (context, weekdayProvider, _) {
-        return FutureBuilder<Map<String, dynamic>?>(
-            future: weekdayProvider.getWeekdayData(weekday),
-            builder: (context, dataSnapshot) {
-              if (dataSnapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              } else if (dataSnapshot.hasError) {
-                return Center(child: Text('Error: ${dataSnapshot.error}'));
-              } else if (!dataSnapshot.hasData || dataSnapshot.data == null) {
-                return const Center(child: Text('No data found.'));
-              }
-
-              Map<String, dynamic> allData = dataSnapshot.data!;
-              if (allData['workouts'].isEmpty) {
-                return const Center(child: Text('No workouts added yet.'));
-              }
-              final exerciseIds = workoutData['exercises'];
-              return ListView.builder(
-                physics: const BouncingScrollPhysics(),
-                itemCount: exerciseIds.length,
-                itemBuilder: (context, index) {
-                  return WorkoutTable(
-                    workoutId: workoutData['id'],
-                    exerciseId: exerciseIds[index],
-                  );
-                },
-              );
-            });
-      }),
+      body: ListView.builder(
+        physics: const BouncingScrollPhysics(),
+        itemCount: exercises.length,
+        // itemCount: exerciseIds.length,
+        itemBuilder: (context, index) {
+          return WorkoutTable(
+            workoutId: workoutData['id'],
+            exerciseId: exercises[index].id,
+            // exerciseId: exerciseIds[index],
+          );
+        },
+      ),
     );
   }
 }

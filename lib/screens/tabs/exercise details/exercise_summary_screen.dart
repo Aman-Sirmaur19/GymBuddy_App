@@ -26,6 +26,7 @@ class ExerciseSummaryScreen extends StatelessWidget {
           ),
           ListView.builder(
             shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
             itemCount: exercise.instructions.length,
             itemBuilder: (context, index) {
               return Container(

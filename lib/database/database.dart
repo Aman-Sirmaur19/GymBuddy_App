@@ -88,12 +88,14 @@ class WorkoutSets extends Table {
 class WeekdayWorkouts extends Table {
   TextColumn get id => text().withLength(min: 1, max: 36)(); // UUID
   TextColumn get day => text()(); // e.g., "Monday", "Tuesday"
-  TextColumn get workoutIds => text()(); // JSON-encoded list of workout IDs
-  TextColumn get exercises => text()
-      .withDefault(const Constant('{}'))(); // JSON-encoded map of exercises
+  TextColumn get workoutIds => text()();
+
+  TextColumn get exercises => text().withDefault(const Constant('{}'))();
+
+  TextColumn get activeWorkout => text().withDefault(const Constant(''))();
 
   @override
-  Set<Column> get primaryKey => {id}; // Primary key
+  Set<Column> get primaryKey => {id};
 }
 
 @DriftDatabase(
@@ -175,9 +177,9 @@ class AppDatabase extends _$AppDatabase {
       WeekdayWorkoutsCompanion(
         id: Value(weekday.id),
         day: Value(weekday.day),
-        workoutIds: Value(jsonEncode(weekday.workoutIds)), // Store as JSON
-        exercises:
-            Value(jsonEncode(weekday.exercises)), // Store exercises as JSON
+        workoutIds: Value(jsonEncode(weekday.workoutIds)),
+        exercises: Value(jsonEncode(weekday.exercises)),
+        activeWorkout: Value(weekday.activeWorkout),
       ),
     );
   }

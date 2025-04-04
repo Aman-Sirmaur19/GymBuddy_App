@@ -7,8 +7,8 @@ import '../providers/weekday_provider.dart';
 import '../providers/workout_provider.dart';
 import '../widgets/custom_elevated_button.dart';
 import '../widgets/custom_text_form_field.dart';
-import 'workout_search_screen.dart';
 import 'tabs/tab_screen.dart';
+import 'workout_search_screen.dart';
 
 class FolderDetailScreen extends StatefulWidget {
   final String weekday;
@@ -218,7 +218,11 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
 
                       List<Map<String, dynamic>> workouts =
                           List<Map<String, dynamic>>.from(allData['workouts']);
-
+                      workouts.sort((a, b) {
+                        if (a['id'] == allData['activeWorkout']) return -1;
+                        if (b['id'] == allData['activeWorkout']) return 1;
+                        return 0;
+                      });
                       return _isGridView
                           ? GridView.builder(
                               physics: const BouncingScrollPhysics(),
@@ -231,7 +235,11 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
                               ),
                               itemCount: workouts.length,
                               itemBuilder: (context, index) {
-                                return _buildWorkoutCard(workouts[index]);
+                                return _buildWorkoutCard(
+                                  workouts[index],
+                                  workouts[index]['id'] ==
+                                      allData['activeWorkout'],
+                                );
                               },
                             )
                           : ListView.builder(
@@ -240,7 +248,11 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
                               itemBuilder: (context, index) {
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 8),
-                                  child: _buildWorkoutCard(workouts[index]),
+                                  child: _buildWorkoutCard(
+                                    workouts[index],
+                                    workouts[index]['id'] ==
+                                        allData['activeWorkout'],
+                                  ),
                                 );
                               },
                             );
@@ -255,7 +267,8 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
     );
   }
 
-  Widget _buildWorkoutCard(Map<String, dynamic> workoutData) {
+  Widget _buildWorkoutCard(Map<String, dynamic> workoutData, bool isActive) {
+    final weekdayProvider = Provider.of<WeekdayProvider>(context);
     final workoutProvider =
         Provider.of<WorkoutProvider>(context, listen: false);
     final workoutId = workoutData['id'];
@@ -309,14 +322,41 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
               ),
               const Spacer(),
               PopupMenuButton<String>(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20)),
+                constraints: const BoxConstraints(
+                  minWidth: 2.0 * 56.0,
+                  maxWidth: 2.4 * 56.0,
+                ),
                 onSelected: (value) {
-                  if (value == "edit") {
+                  if (value == "active") {
+                    if (isActive == false) {
+                      weekdayProvider
+                          .setActiveWorkout(widget.weekday, workoutId)
+                          .then((value) => setState(() {}));
+                    } else {
+                      weekdayProvider
+                          .setActiveWorkout(widget.weekday, '')
+                          .then((value) => setState(() {}));
+                    }
+                  } else if (value == "edit") {
                     _showEditBottomSheet(context, workout);
                   } else if (value == "remove") {
                     _showRemoveDialog(context, workout.id);
                   }
                 },
                 itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: "active",
+                    child: Row(
+                      children: [
+                        Icon(Icons.verified_rounded,
+                            color: isActive ? Colors.grey : Colors.green),
+                        const SizedBox(width: 8),
+                        Text(isActive ? "Deactivate" : "Activate"),
+                      ],
+                    ),
+                  ),
                   const PopupMenuItem(
                     value: "edit",
                     child: Row(
@@ -354,13 +394,21 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
               color: Theme.of(context).colorScheme.secondary,
             ),
           ),
-          Text(
-            '${workoutData['exercises'].length} ${workoutData['exercises'].length < 2 ? 'Exercise' : 'Exercises'}',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.tertiary,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${workoutData['exercises'].length} ${workoutData['exercises'].length < 2 ? 'Exercise' : 'Exercises'}',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.tertiary,
+                ),
+              ),
+              if (isActive)
+                const Icon(Icons.verified_rounded,
+                    color: Colors.green, size: 18),
+            ],
           ),
         ],
       ),

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:drift/native.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:path/path.dart' as p;
 import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart';
@@ -19,6 +20,7 @@ import 'screens/onboarding/onboarding1_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  _initializeMobileAds();
 
   final database = await _initializeDatabase();
 
@@ -41,6 +43,10 @@ void main() async {
     exerciseProvider: exerciseProvider,
     workoutSetProvider: workoutSetProvider,
   ));
+}
+
+void _initializeMobileAds() async {
+  await MobileAds.instance.initialize();
 }
 
 Future<AppDatabase> _initializeDatabase() async {

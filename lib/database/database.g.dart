@@ -1546,8 +1546,17 @@ class $WeekdayWorkoutsTable extends WeekdayWorkouts
       type: DriftSqlType.string,
       requiredDuringInsert: false,
       defaultValue: const Constant('{}'));
+  static const VerificationMeta _activeWorkoutMeta =
+      const VerificationMeta('activeWorkout');
   @override
-  List<GeneratedColumn> get $columns => [id, day, workoutIds, exercises];
+  late final GeneratedColumn<String> activeWorkout = GeneratedColumn<String>(
+      'active_workout', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(''));
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, day, workoutIds, exercises, activeWorkout];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1581,6 +1590,12 @@ class $WeekdayWorkoutsTable extends WeekdayWorkouts
       context.handle(_exercisesMeta,
           exercises.isAcceptableOrUnknown(data['exercises']!, _exercisesMeta));
     }
+    if (data.containsKey('active_workout')) {
+      context.handle(
+          _activeWorkoutMeta,
+          activeWorkout.isAcceptableOrUnknown(
+              data['active_workout']!, _activeWorkoutMeta));
+    }
     return context;
   }
 
@@ -1598,6 +1613,8 @@ class $WeekdayWorkoutsTable extends WeekdayWorkouts
           .read(DriftSqlType.string, data['${effectivePrefix}workout_ids'])!,
       exercises: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}exercises'])!,
+      activeWorkout: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}active_workout'])!,
     );
   }
 
@@ -1612,11 +1629,13 @@ class WeekdayWorkout extends DataClass implements Insertable<WeekdayWorkout> {
   final String day;
   final String workoutIds;
   final String exercises;
+  final String activeWorkout;
   const WeekdayWorkout(
       {required this.id,
       required this.day,
       required this.workoutIds,
-      required this.exercises});
+      required this.exercises,
+      required this.activeWorkout});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -1624,6 +1643,7 @@ class WeekdayWorkout extends DataClass implements Insertable<WeekdayWorkout> {
     map['day'] = Variable<String>(day);
     map['workout_ids'] = Variable<String>(workoutIds);
     map['exercises'] = Variable<String>(exercises);
+    map['active_workout'] = Variable<String>(activeWorkout);
     return map;
   }
 
@@ -1633,6 +1653,7 @@ class WeekdayWorkout extends DataClass implements Insertable<WeekdayWorkout> {
       day: Value(day),
       workoutIds: Value(workoutIds),
       exercises: Value(exercises),
+      activeWorkout: Value(activeWorkout),
     );
   }
 
@@ -1644,6 +1665,7 @@ class WeekdayWorkout extends DataClass implements Insertable<WeekdayWorkout> {
       day: serializer.fromJson<String>(json['day']),
       workoutIds: serializer.fromJson<String>(json['workoutIds']),
       exercises: serializer.fromJson<String>(json['exercises']),
+      activeWorkout: serializer.fromJson<String>(json['activeWorkout']),
     );
   }
   @override
@@ -1654,16 +1676,22 @@ class WeekdayWorkout extends DataClass implements Insertable<WeekdayWorkout> {
       'day': serializer.toJson<String>(day),
       'workoutIds': serializer.toJson<String>(workoutIds),
       'exercises': serializer.toJson<String>(exercises),
+      'activeWorkout': serializer.toJson<String>(activeWorkout),
     };
   }
 
   WeekdayWorkout copyWith(
-          {String? id, String? day, String? workoutIds, String? exercises}) =>
+          {String? id,
+          String? day,
+          String? workoutIds,
+          String? exercises,
+          String? activeWorkout}) =>
       WeekdayWorkout(
         id: id ?? this.id,
         day: day ?? this.day,
         workoutIds: workoutIds ?? this.workoutIds,
         exercises: exercises ?? this.exercises,
+        activeWorkout: activeWorkout ?? this.activeWorkout,
       );
   @override
   String toString() {
@@ -1671,13 +1699,15 @@ class WeekdayWorkout extends DataClass implements Insertable<WeekdayWorkout> {
           ..write('id: $id, ')
           ..write('day: $day, ')
           ..write('workoutIds: $workoutIds, ')
-          ..write('exercises: $exercises')
+          ..write('exercises: $exercises, ')
+          ..write('activeWorkout: $activeWorkout')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, day, workoutIds, exercises);
+  int get hashCode =>
+      Object.hash(id, day, workoutIds, exercises, activeWorkout);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1685,7 +1715,8 @@ class WeekdayWorkout extends DataClass implements Insertable<WeekdayWorkout> {
           other.id == this.id &&
           other.day == this.day &&
           other.workoutIds == this.workoutIds &&
-          other.exercises == this.exercises);
+          other.exercises == this.exercises &&
+          other.activeWorkout == this.activeWorkout);
 }
 
 class WeekdayWorkoutsCompanion extends UpdateCompanion<WeekdayWorkout> {
@@ -1693,12 +1724,14 @@ class WeekdayWorkoutsCompanion extends UpdateCompanion<WeekdayWorkout> {
   final Value<String> day;
   final Value<String> workoutIds;
   final Value<String> exercises;
+  final Value<String> activeWorkout;
   final Value<int> rowid;
   const WeekdayWorkoutsCompanion({
     this.id = const Value.absent(),
     this.day = const Value.absent(),
     this.workoutIds = const Value.absent(),
     this.exercises = const Value.absent(),
+    this.activeWorkout = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   WeekdayWorkoutsCompanion.insert({
@@ -1706,6 +1739,7 @@ class WeekdayWorkoutsCompanion extends UpdateCompanion<WeekdayWorkout> {
     required String day,
     required String workoutIds,
     this.exercises = const Value.absent(),
+    this.activeWorkout = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         day = Value(day),
@@ -1715,6 +1749,7 @@ class WeekdayWorkoutsCompanion extends UpdateCompanion<WeekdayWorkout> {
     Expression<String>? day,
     Expression<String>? workoutIds,
     Expression<String>? exercises,
+    Expression<String>? activeWorkout,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1722,6 +1757,7 @@ class WeekdayWorkoutsCompanion extends UpdateCompanion<WeekdayWorkout> {
       if (day != null) 'day': day,
       if (workoutIds != null) 'workout_ids': workoutIds,
       if (exercises != null) 'exercises': exercises,
+      if (activeWorkout != null) 'active_workout': activeWorkout,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1731,12 +1767,14 @@ class WeekdayWorkoutsCompanion extends UpdateCompanion<WeekdayWorkout> {
       Value<String>? day,
       Value<String>? workoutIds,
       Value<String>? exercises,
+      Value<String>? activeWorkout,
       Value<int>? rowid}) {
     return WeekdayWorkoutsCompanion(
       id: id ?? this.id,
       day: day ?? this.day,
       workoutIds: workoutIds ?? this.workoutIds,
       exercises: exercises ?? this.exercises,
+      activeWorkout: activeWorkout ?? this.activeWorkout,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1756,6 +1794,9 @@ class WeekdayWorkoutsCompanion extends UpdateCompanion<WeekdayWorkout> {
     if (exercises.present) {
       map['exercises'] = Variable<String>(exercises.value);
     }
+    if (activeWorkout.present) {
+      map['active_workout'] = Variable<String>(activeWorkout.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1769,6 +1810,7 @@ class WeekdayWorkoutsCompanion extends UpdateCompanion<WeekdayWorkout> {
           ..write('day: $day, ')
           ..write('workoutIds: $workoutIds, ')
           ..write('exercises: $exercises, ')
+          ..write('activeWorkout: $activeWorkout, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();

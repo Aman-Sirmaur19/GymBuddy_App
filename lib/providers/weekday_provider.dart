@@ -27,6 +27,7 @@ class WeekdayProvider extends ChangeNotifier {
                 ),
               )
             : <String, List<String>>{},
+        'activeWorkout': w.activeWorkout,
       });
     }).toList();
     notifyListeners();
@@ -51,6 +52,7 @@ class WeekdayProvider extends ChangeNotifier {
         day: existing.day,
         workoutIds: updatedWorkoutIds,
         exercises: updatedExercises,
+        activeWorkout: existing.activeWorkout,
       );
       _weekdays[existingIndex] = updatedWeekday;
     } else {
@@ -58,7 +60,8 @@ class WeekdayProvider extends ChangeNotifier {
         id: const Uuid().v4(),
         day: day,
         workoutIds: [workoutId],
-        exercises: {workoutId: []}, // Initialize with empty exercises
+        exercises: {workoutId: []},
+        activeWorkout: '',
       );
       _weekdays.add(updatedWeekday);
     }
@@ -84,6 +87,7 @@ class WeekdayProvider extends ChangeNotifier {
       day: existing.day,
       workoutIds: updatedWorkoutIds,
       exercises: updatedExercises,
+      activeWorkout: existing.activeWorkout,
     );
 
     await db.upsertWeekday(updatedWeekday);
@@ -113,6 +117,7 @@ class WeekdayProvider extends ChangeNotifier {
       day: existing.day,
       workoutIds: existing.workoutIds,
       exercises: updatedExercises,
+      activeWorkout: existing.activeWorkout,
     );
 
     await db.upsertWeekday(updatedWeekday);
@@ -138,6 +143,7 @@ class WeekdayProvider extends ChangeNotifier {
       day: existing.day,
       workoutIds: existing.workoutIds,
       exercises: updatedExercises,
+      activeWorkout: existing.activeWorkout,
     );
 
     await db.upsertWeekday(updatedWeekday);
@@ -149,7 +155,13 @@ class WeekdayProvider extends ChangeNotifier {
   Future<Map<String, dynamic>?> getWeekdayData(String day) async {
     final weekday = _weekdays.firstWhere(
       (w) => w.day == day,
-      orElse: () => Weekday(id: '', day: '', workoutIds: [], exercises: {}),
+      orElse: () => Weekday(
+        id: '',
+        day: '',
+        workoutIds: [],
+        exercises: {},
+        activeWorkout: '',
+      ),
     );
 
     // Return null if no data found
@@ -171,6 +183,30 @@ class WeekdayProvider extends ChangeNotifier {
       'id': weekday.id,
       'day': weekday.day,
       'workouts': workoutDetails,
+      'activeWorkout': weekday.activeWorkout,
     };
+  }
+
+  /// Set the active workout for a given weekday
+  Future<void> setActiveWorkout(String day, String workoutId) async {
+    final index = _weekdays.indexWhere((w) => w.day == day);
+    if (index == -1) return;
+
+    final existing = _weekdays[index];
+
+    // Only set if the workoutId exists in the workoutIds list
+    // if (!existing.workoutIds.contains(workoutId)) return;
+
+    final updatedWeekday = Weekday(
+      id: existing.id,
+      day: existing.day,
+      workoutIds: existing.workoutIds,
+      exercises: existing.exercises,
+      activeWorkout: workoutId,
+    );
+
+    await db.upsertWeekday(updatedWeekday);
+    _weekdays[index] = updatedWeekday;
+    notifyListeners();
   }
 }

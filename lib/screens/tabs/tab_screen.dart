@@ -9,7 +9,6 @@ import '../../widgets/custom_elevated_button.dart';
 import 'overview_tab.dart';
 import 'exercises_tab.dart';
 import 'muscles_tab.dart';
-import 'sessions_tab.dart';
 import 'start_session_screen.dart';
 
 class TabScreen extends StatefulWidget {
@@ -33,7 +32,7 @@ class _TabScreenState extends State<TabScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.index = 1;
   }
 
@@ -97,7 +96,6 @@ class _TabScreenState extends State<TabScreen>
                   Tab(text: "Overview"),
                   Tab(text: "Exercises"),
                   Tab(text: "Muscles"),
-                  Tab(text: "Sessions"),
                 ],
               ),
             ),
@@ -110,8 +108,10 @@ class _TabScreenState extends State<TabScreen>
                     weekday: widget.weekDay,
                     workoutData: widget.workoutData,
                   ),
-                  const MusclesTab(),
-                  const SessionsTab(),
+                  MusclesTab(
+                    weekday: widget.weekDay,
+                    workoutData: widget.workoutData,
+                  ),
                 ],
               ),
             ),
@@ -126,7 +126,7 @@ class _TabScreenState extends State<TabScreen>
                                   workoutData: widget.workoutData,
                                 )))
                     : null,
-                label: 'Start new session',
+                label: 'Start session',
                 backgroundColor: Colors.green,
               );
             }),

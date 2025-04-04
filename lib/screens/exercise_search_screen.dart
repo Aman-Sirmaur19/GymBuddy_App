@@ -31,7 +31,8 @@ class _ExerciseSearchScreenState extends State<ExerciseSearchScreen> {
   final Map<String, String?> _selectedFilters = {
     'level': null,
     'category': null,
-    'muscles': null,
+    'primaryMuscles': null,
+    'secondaryMuscles': null,
     'equipment': null,
     'force': null,
     'mechanic': null,
@@ -42,8 +43,9 @@ class _ExerciseSearchScreenState extends State<ExerciseSearchScreen> {
     Set<String> options = {};
 
     for (var exercise in provider.exercises) {
-      if (filterKey == 'muscles') {
+      if (filterKey == 'primaryMuscles') {
         options.addAll(exercise.primaryMuscles);
+      } else if (filterKey == 'secondaryMuscles') {
         options.addAll(exercise.secondaryMuscles);
       } else {
         final value = exercise.toJson()[filterKey];
