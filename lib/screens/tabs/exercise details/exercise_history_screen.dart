@@ -24,102 +24,88 @@ class ExerciseHistoryScreen extends StatefulWidget {
 }
 
 class _ExerciseHistoryScreenState extends State<ExerciseHistoryScreen> {
-  void _showAddSetModal() {
-    TextEditingController setController = TextEditingController();
-    TextEditingController repController = TextEditingController();
-    TextEditingController weightController = TextEditingController();
+  bool _isAddingSet = false;
+  String? _selectedSet;
+  String? _selectedReps;
+  String? _selectedWeight;
 
+  void _showInputBottomSheet(String title, Function(String) onSubmit) {
+    TextEditingController controller = TextEditingController();
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
       showDragHandle: true,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-            left: 16,
-            right: 16,
-            top: 16,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text("Add New Set",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 10),
-              CustomTextFormField(
-                controller: setController,
-                hintText: 'Set',
-                icon: Icons.format_list_numbered_rounded,
-                keyboardType: TextInputType.number,
-                onFieldSubmitted: (value) {
-                  setController.text = value;
-                },
-                isFilter: false,
-              ),
-              const SizedBox(height: 10),
-              CustomTextFormField(
-                controller: repController,
-                hintText: 'Reps',
-                icon: Icons.replay_rounded,
-                keyboardType: TextInputType.number,
-                onFieldSubmitted: (value) {
-                  repController.text = value;
-                },
-                isFilter: false,
-              ),
-              const SizedBox(height: 10),
-              CustomTextFormField(
-                controller: weightController,
-                hintText: 'Weight (Kg)',
-                icon: Icons.fitness_center_rounded,
-                keyboardType: TextInputType.number,
-                onFieldSubmitted: (value) {
-                  weightController.text = value;
-                },
-                isFilter: false,
-              ),
-              const SizedBox(height: 20),
-              CustomElevatedButton(
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom, left: 16, right: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("Add $title",
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                )),
+            const SizedBox(height: 20),
+            CustomTextFormField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              hintText: title,
+              icon: title == 'Reps'
+                  ? Icons.replay_rounded
+                  : Icons.fitness_center_rounded,
+              onFieldSubmitted: (value) {
+                onSubmit(value);
+                Navigator.pop(context);
+              },
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: 100,
+              child: CustomElevatedButton(
                 onPressed: () {
-                  if (setController.text.isNotEmpty &&
-                      repController.text.isNotEmpty &&
-                      weightController.text.isNotEmpty) {
-                    setState(() {
-                      final workoutSetProvider =
-                          Provider.of<WorkoutSetProvider>(context,
-                              listen: false);
-                      workoutSetProvider.addWorkoutSet(WorkoutSet(
-                        id: const Uuid().v4(),
-                        workoutId: widget.workoutId,
-                        exerciseId: widget.exercise.id,
-                        set: int.parse(setController.text),
-                        reps: int.parse(repController.text),
-                        weight: double.parse(weightController.text),
-                        isCompleted: [],
-                      ));
-                    });
-                    Navigator.pop(context);
-                  }
+                  onSubmit(controller.text);
+                  Navigator.pop(context);
                 },
-                label: 'Add Set',
+                label: 'Add',
               ),
-              const SizedBox(height: 10),
-            ],
-          ),
-        );
-      },
+            ),
+          ],
+        ),
+      ),
     );
+  }
+
+  int _getSetNumber(List<WorkoutSet> workoutSets) {
+    if (_selectedSet == 'W') {
+      return 0;
+    } else if (_selectedSet == 'S') {
+      final sSets = workoutSets.where((set) => set.set > 0).toList();
+      if (sSets.isEmpty) return 1;
+      final maxSet =
+          sSets.map((set) => set.set).reduce((a, b) => a > b ? a : b);
+      return maxSet + 1;
+    } else if (_selectedSet == 'D') {
+      return -1;
+    } else {
+      return int.tryParse(_selectedSet ?? '') ?? 0;
+    }
+  }
+
+  void _deleteSet(String id) {
+    final workoutSetProvider =
+        Provider.of<WorkoutSetProvider>(context, listen: false);
+    workoutSetProvider.deleteWorkoutSet(id).then((value) => setState(() {}));
   }
 
   @override
   Widget build(BuildContext context) {
     final workoutSetProvider =
         Provider.of<WorkoutSetProvider>(context, listen: false);
-    List workoutSets = workoutSetProvider.getWorkoutSetsForExercise(
+    List<WorkoutSet> workoutSets = workoutSetProvider.getWorkoutSetsForExercise(
         widget.workoutId, widget.exercise.id);
     return ListView(
       physics: const BouncingScrollPhysics(),
@@ -136,20 +122,28 @@ class _ExerciseHistoryScreenState extends State<ExerciseHistoryScreen> {
               ),
             ),
             TextButton(
-                onPressed: _showAddSetModal,
+                onPressed: () {
+                  setState(() {
+                    _isAddingSet = true;
+                    _selectedSet = null;
+                    _selectedReps = null;
+                    _selectedWeight = null;
+                  });
+                },
                 child: const Text(
                   'Add',
                   style: TextStyle(color: Colors.deepPurpleAccent),
                 )),
           ],
         ),
-        if (workoutSets.isEmpty) const Center(child: Text('Add set')),
-        if (workoutSets.isNotEmpty)
+        if (workoutSets.isEmpty && !_isAddingSet)
+          const Center(child: Text('Add set')),
+        if (workoutSets.isNotEmpty || _isAddingSet)
           Table(
             defaultVerticalAlignment: TableCellVerticalAlignment.middle,
             columnWidths: const {
-              0: FlexColumnWidth(1),
-              1: FlexColumnWidth(1),
+              0: FlexColumnWidth(.75),
+              1: FlexColumnWidth(.75),
               2: FlexColumnWidth(1),
               3: FlexColumnWidth(1),
             },
@@ -198,48 +192,147 @@ class _ExerciseHistoryScreenState extends State<ExerciseHistoryScreen> {
                   ))),
                 ],
               ),
-              for (int i = 0; i < workoutSets.length; i++)
+              // Existing Sets
+              ...(() {
+                final sortedSets = [...workoutSets];
+                sortedSets.sort((a, b) {
+                  int orderValue(WorkoutSet s) {
+                    if (s.set == 0) return 0;
+                    if (s.set == -1) return 2;
+                    return 1; // normal sets
+                  }
+
+                  int orderA = orderValue(a);
+                  int orderB = orderValue(b);
+
+                  if (orderA != orderB) {
+                    return orderA.compareTo(orderB);
+                  }
+                  return a.set.compareTo(b.set);
+                });
+
+                return sortedSets.map((set) {
+                  return TableRow(
+                    children: [
+                      TableCell(
+                        child: Center(
+                          child: Text(
+                            set.set == 0
+                                ? 'W'
+                                : set.set == -1
+                                    ? 'D'
+                                    : '${set.set}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: set.set == 0
+                                  ? Colors.deepPurpleAccent
+                                  : set.set == -1
+                                      ? Colors.blue
+                                      : null,
+                            ),
+                          ),
+                        ),
+                      ),
+                      TableCell(child: Center(child: Text('${set.reps}'))),
+                      TableCell(
+                          child: Center(
+                              child: Text(set.weight.toStringAsFixed(0)))),
+                      TableCell(
+                        child: IconButton(
+                          icon: const Icon(Icons.delete_outline_rounded,
+                              color: Colors.red),
+                          onPressed: () => showDialog(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: const Text("Delete Set"),
+                              content: const Text(
+                                  "Are you sure you want to delete set from exercise?"),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx),
+                                  child: Text("Cancel",
+                                      style: TextStyle(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .secondary)),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    _deleteSet(set.id);
+                                    Navigator.pop(ctx);
+                                  },
+                                  child: const Text("Delete",
+                                      style: TextStyle(color: Colors.red)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList();
+              })(),
+              // New Set Row (Conditional)
+              if (_isAddingSet)
                 TableRow(
                   children: [
-                    for (var value in [
-                      workoutSets[i].set,
-                      workoutSets[i].reps,
-                      workoutSets[i].weight.toStringAsFixed(0),
-                    ])
-                      TableCell(child: Center(child: Text('$value'))),
-                    TableCell(
-                        child: IconButton(
-                            onPressed: () => showDialog(
-                                  context: context,
-                                  builder: (ctx) => AlertDialog(
-                                    title: const Text("Delete Set"),
-                                    content: const Text(
-                                        "Are you sure you want to delete set from exercise?"),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(ctx),
-                                        child: Text("Cancel",
-                                            style: TextStyle(
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .secondary)),
-                                      ),
-                                      TextButton(
-                                        onPressed: () => workoutSetProvider
-                                            .deleteWorkoutSet(workoutSets[i].id)
-                                            .then((value) {
-                                          setState(() {});
-                                          Navigator.pop(ctx);
-                                        }),
-                                        child: const Text("Delete",
-                                            style:
-                                                TextStyle(color: Colors.red)),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                            tooltip: 'Delete',
-                            icon: const Icon(Icons.delete, color: Colors.red))),
+                    _buildSetButton(workoutSets),
+                    _buildRepsButton(),
+                    _buildWeightButton(),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            if (_selectedSet != null &&
+                                _selectedReps != null &&
+                                _selectedWeight != null) {
+                              final provider = Provider.of<WorkoutSetProvider>(
+                                  context,
+                                  listen: false);
+                              final setNumber = _getSetNumber(workoutSets);
+                              provider.addWorkoutSet(WorkoutSet(
+                                id: const Uuid().v4(),
+                                workoutId: widget.workoutId,
+                                exerciseId: widget.exercise.id,
+                                sessionId: DateTime.now()
+                                    .toIso8601String()
+                                    .split('T')
+                                    .first,
+                                set: setNumber,
+                                reps: int.parse(_selectedReps!),
+                                weight: double.parse(_selectedWeight!),
+                                isCompleted: false,
+                              ));
+                              setState(() {
+                                _isAddingSet = false;
+                                _selectedSet = null;
+                                _selectedReps = null;
+                                _selectedWeight = null;
+                              });
+                            }
+                          },
+                          tooltip: 'Save',
+                          icon: const Icon(Icons.check_circle_outline_rounded,
+                              color: Colors.lightGreen),
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            setState(() {
+                              _isAddingSet = false;
+                              _selectedSet = null;
+                              _selectedReps = null;
+                              _selectedWeight = null;
+                            });
+                          },
+                          tooltip: 'Discard',
+                          icon: Icon(Icons.cancel_outlined,
+                              color: Colors.red.shade400),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
             ],
@@ -247,6 +340,107 @@ class _ExerciseHistoryScreenState extends State<ExerciseHistoryScreen> {
         const SizedBox(height: 30),
         const SizedBox(height: 300, child: HistoryTab()),
       ],
+    );
+  }
+
+  Widget _buildSetButton(List<WorkoutSet> workoutSets) {
+    // Check if W and D are already present
+    bool hasW = workoutSets.any((e) => e.set == 0);
+    bool hasD = workoutSets.any((e) => e.set == -1);
+    bool hasBothWD = hasW && hasD;
+
+    // If both W and D exist, auto-select S
+    if (_selectedSet == null && hasBothWD) {
+      final sSets = workoutSets
+          .where((e) => e.set != 0 && e.set != -1)
+          .toList(); // only normal sets
+
+      final lastSet = sSets.isNotEmpty
+          ? sSets.map((e) => e.set).reduce((a, b) => a > b ? a : b)
+          : 0;
+
+      _selectedSet = (lastSet + 1).toString(); // auto-assign next S set
+    }
+
+    return Center(
+      child: _selectedSet == null
+          ? PopupMenuButton<String>(
+              icon: const Icon(Icons.more_horiz),
+              tooltip: 'Choose Set-Type',
+              onSelected: (value) {
+                if (value == 'S') {
+                  final sSets = workoutSets
+                      .where((e) => e.set != 0 && e.set != -1)
+                      .toList();
+                  final lastSet = sSets.isNotEmpty
+                      ? sSets.map((e) => e.set).reduce((a, b) => a > b ? a : b)
+                      : 0;
+                  setState(() {
+                    _selectedSet = (lastSet + 1).toString();
+                  });
+                } else {
+                  setState(() {
+                    _selectedSet = value == 'D' ? '-1' : value; // D as -1
+                  });
+                }
+              },
+              itemBuilder: (context) {
+                final List<PopupMenuEntry<String>> items = [];
+                if (!hasW) {
+                  items.add(const PopupMenuItem(
+                      value: 'W',
+                      child: Text(
+                        'W - Warmup',
+                        style: TextStyle(color: Colors.deepPurpleAccent),
+                      )));
+                }
+                items.add(const PopupMenuItem(
+                    value: 'S', child: Text('S - Straight')));
+                if (!hasD) {
+                  items.add(const PopupMenuItem(
+                      value: 'D',
+                      child: Text(
+                        'D - Drop',
+                        style: TextStyle(color: Colors.blue),
+                      )));
+                }
+                return items;
+              },
+            )
+          : Text(
+              _selectedSet! == '-1' ? 'D' : _selectedSet!,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+    );
+  }
+
+  Widget _buildRepsButton() {
+    return Center(
+      child: _selectedReps == null
+          ? IconButton(
+              onPressed: () => _showInputBottomSheet("Reps", (value) {
+                setState(() => _selectedReps = value);
+              }),
+              tooltip: 'Add Reps',
+              icon: const Icon(Icons.more_horiz),
+            )
+          : Text(_selectedReps!,
+              style: const TextStyle(fontWeight: FontWeight.bold)),
+    );
+  }
+
+  Widget _buildWeightButton() {
+    return Center(
+      child: _selectedWeight == null
+          ? IconButton(
+              onPressed: () => _showInputBottomSheet("Weight", (value) {
+                setState(() => _selectedWeight = value);
+              }),
+              tooltip: 'Add Weight',
+              icon: const Icon(Icons.more_horiz),
+            )
+          : Text(_selectedWeight!,
+              style: const TextStyle(fontWeight: FontWeight.bold)),
     );
   }
 }

@@ -18,27 +18,19 @@ class StartSessionScreen extends StatelessWidget {
     required this.workoutData,
   });
 
-  String _getTodayDate() {
-    return DateTime.now().toIso8601String().split('T')[0];
-  }
-
   void _finishSession(BuildContext context) {
     final workoutSetProvider =
         Provider.of<WorkoutSetProvider>(context, listen: false);
-    String today = _getTodayDate();
 
-    // Get all sets and mark them as completed
+    // Get all sets for the current workout
     List<WorkoutSet> allSets =
         workoutSetProvider.getAllWorkoutSetsForWorkout(workoutData['id']);
-    for (var set in allSets) {
-      List<String> updatedCompletion = List.from(set.isCompleted);
-      if (!updatedCompletion.contains(today)) {
-        updatedCompletion.add(today);
-      }
 
-      workoutSetProvider.updateWorkoutSet(
-        set.copyWith(isCompleted: updatedCompletion),
-      );
+    // Mark each set as completed
+    for (var set in allSets) {
+      if (!set.isCompleted) {
+        workoutSetProvider.updateWorkoutSet(set.copyWith(isCompleted: true));
+      }
     }
   }
 
@@ -54,9 +46,9 @@ class StartSessionScreen extends StatelessWidget {
     int exercisesLeft = exercises.where((Exercise exercise) {
       List<WorkoutSet> sets = workoutSetProvider.getWorkoutSetsForExercise(
           workoutData['id'], exercise.id);
-      return sets.any((set) => !set.isCompleted.contains(_getTodayDate()));
+
+      return sets.any((set) => !set.isCompleted);
     }).length;
-    // final exerciseIds = workoutData['exercises'];
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -121,12 +113,10 @@ class StartSessionScreen extends StatelessWidget {
       body: ListView.builder(
         physics: const BouncingScrollPhysics(),
         itemCount: exercises.length,
-        // itemCount: exerciseIds.length,
         itemBuilder: (context, index) {
           return WorkoutTable(
             workoutId: workoutData['id'],
             exerciseId: exercises[index].id,
-            // exerciseId: exerciseIds[index],
           );
         },
       ),

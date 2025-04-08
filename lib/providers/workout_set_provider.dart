@@ -10,7 +10,6 @@ class WorkoutSetProvider extends ChangeNotifier {
 
   WorkoutSetProvider(this.db);
 
-  /// Load all workout sets from the database
   Future<void> loadWorkoutSets() async {
     final workoutSetData = await db.getAllWorkoutSets();
     _workoutSets = workoutSetData
@@ -21,16 +20,16 @@ class WorkoutSetProvider extends ChangeNotifier {
 
   List<model.WorkoutSet> get workoutSets => _workoutSets;
 
-  /// Add a new workout set
   Future<void> addWorkoutSet(model.WorkoutSet workoutSet) async {
     final workoutSetCompanion = database.WorkoutSetsCompanion(
       id: Value(workoutSet.id),
       workoutId: Value(workoutSet.workoutId),
       exerciseId: Value(workoutSet.exerciseId),
+      sessionId: Value(workoutSet.sessionId),
       set: Value(workoutSet.set),
       reps: Value(workoutSet.reps),
       weight: Value(workoutSet.weight),
-      isCompleted: Value(workoutSet.isCompleted.join(',')), // Store as comma-separated string
+      isCompleted: Value(workoutSet.isCompleted),
     );
 
     final id = await db.addWorkoutSet(workoutSetCompanion);
@@ -38,16 +37,16 @@ class WorkoutSetProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Update an existing workout set
   Future<void> updateWorkoutSet(model.WorkoutSet workoutSet) async {
     final workoutSetCompanion = database.WorkoutSetsCompanion(
       id: Value(workoutSet.id),
       workoutId: Value(workoutSet.workoutId),
       exerciseId: Value(workoutSet.exerciseId),
+      sessionId: Value(workoutSet.sessionId),
       set: Value(workoutSet.set),
       reps: Value(workoutSet.reps),
       weight: Value(workoutSet.weight),
-      isCompleted: Value(workoutSet.isCompleted.join(',')), // Convert list to string
+      isCompleted: Value(workoutSet.isCompleted),
     );
 
     await db.updateWorkoutSet(workoutSetCompanion);
@@ -57,67 +56,55 @@ class WorkoutSetProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Delete a workout set
   Future<void> deleteWorkoutSet(String id) async {
     await db.deleteWorkoutSet(id);
     _workoutSets.removeWhere((ws) => ws.id == id);
     notifyListeners();
   }
 
-  /// Get all workout sets for a specific workout
   List<model.WorkoutSet> getAllWorkoutSetsForWorkout(String workoutId) {
     return _workoutSets.where((ws) => ws.workoutId == workoutId).toList();
   }
 
-  /// Get all workout sets for a specific workout and exercise
   List<model.WorkoutSet> getWorkoutSetsForExercise(String workoutId, String exerciseId) {
-    return _workoutSets.where((ws) => ws.workoutId == workoutId && ws.exerciseId == exerciseId).toList();
+    return _workoutSets.where((ws) =>
+    ws.workoutId == workoutId && ws.exerciseId == exerciseId).toList();
   }
 
-  /// Mark a workout set as completed for today
-  Future<void> markSetCompleted(String workoutId, String exerciseId) async {
-    final today = DateTime.now().toIso8601String().split('T').first;
-    final index = _workoutSets.indexWhere((ws) => ws.workoutId == workoutId && ws.exerciseId == exerciseId);
+  List<model.WorkoutSet> getWorkoutSetsForSession(String sessionId) {
+    return _workoutSets.where((ws) => ws.sessionId == sessionId).toList();
+  }
 
+  Future<void> markSetCompleted(String id) async {
+    final index = _workoutSets.indexWhere((ws) => ws.id == id);
     if (index != -1) {
-      final updatedSet = _workoutSets[index];
-      if (!updatedSet.isCompleted.contains(today)) {
-        final newCompletedList = [...updatedSet.isCompleted, today];
-        final newSet = updatedSet.copyWith(isCompleted: newCompletedList);
-        await updateWorkoutSet(newSet);
-      }
+      final updatedSet = _workoutSets[index].copyWith(isCompleted: true);
+      await updateWorkoutSet(updatedSet);
     }
   }
 
-  /// Unmark a workout set for today
-  Future<void> unmarkSetCompleted(String workoutId, String exerciseId) async {
-    final today = DateTime.now().toIso8601String().split('T').first;
-    final index = _workoutSets.indexWhere((ws) => ws.workoutId == workoutId && ws.exerciseId == exerciseId);
-
+  Future<void> unmarkSetCompleted(String id) async {
+    final index = _workoutSets.indexWhere((ws) => ws.id == id);
     if (index != -1) {
-      final updatedSet = _workoutSets[index];
-      final newCompletedList = updatedSet.isCompleted.where((date) => date != today).toList();
-      final newSet = updatedSet.copyWith(isCompleted: newCompletedList);
-      await updateWorkoutSet(newSet);
+      final updatedSet = _workoutSets[index].copyWith(isCompleted: false);
+      await updateWorkoutSet(updatedSet);
     }
   }
 
-  /// Check if a workout set is completed today
-  bool isSetCompletedToday(String workoutId, String exerciseId) {
-    final today = DateTime.now().toIso8601String().split('T').first;
-    final workoutSet = _workoutSets.firstWhere(
-          (ws) => ws.workoutId == workoutId && ws.exerciseId == exerciseId,
+  bool isSetCompleted(String id) {
+    final set = _workoutSets.firstWhere(
+          (ws) => ws.id == id,
       orElse: () => model.WorkoutSet(
         id: '',
-        workoutId: workoutId,
-        exerciseId: exerciseId,
+        workoutId: '',
+        exerciseId: '',
+        sessionId: '',
         set: 0,
         reps: 0,
-        weight: 0.0,
-        isCompleted: [],
+        weight: 0,
+        isCompleted: false,
       ),
     );
-
-    return workoutSet.isCompleted.contains(today);
+    return set.isCompleted;
   }
 }

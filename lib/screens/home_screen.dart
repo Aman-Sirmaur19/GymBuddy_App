@@ -1,11 +1,15 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 import '../models/workout.dart';
+import '../models/workout_set.dart';
 import '../providers/user_provider.dart';
 import '../providers/weekday_provider.dart';
 import '../providers/workout_provider.dart';
+import '../providers/workout_set_provider.dart';
 import 'journal_screen.dart';
 import 'tabs/tab_screen.dart';
 import 'tabs/start_session_screen.dart';
@@ -14,6 +18,51 @@ import 'dashboard/dashboard_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
+
+  Future<void> _ensureTodaySetsExist({
+    required List<WorkoutSet> allSets,
+    required String workoutId,
+    required WorkoutSetProvider workoutSetProvider,
+  }) async {
+    String todaySessionId = DateTime.now().toIso8601String().split('T').first;
+    final prefs = await SharedPreferences.getInstance();
+    final addedKey = 'setsAddedFor_$todaySessionId';
+
+    if (prefs.getBool(addedKey) == true || allSets.isEmpty) return;
+
+    // Check if today's session already has sets
+    bool hasTodaySets = allSets.any((set) => set.sessionId == todaySessionId);
+
+    if (hasTodaySets || allSets.isEmpty) return;
+
+    // Group sets by sessionId
+    Map<String, List<WorkoutSet>> grouped = {};
+    for (var set in allSets) {
+      grouped.putIfAbsent(set.sessionId, () => []).add(set);
+    }
+
+    // Sort sessionIds descending (most recent first)
+    List<String> sortedSessionIds = grouped.keys.toList()
+      ..sort((a, b) => b.compareTo(a));
+
+    // Find most recent session before today
+    String? recentPastSessionId = sortedSessionIds.firstWhere(
+      (id) => id.compareTo(todaySessionId) < 0,
+      orElse: () => '',
+    );
+    if (recentPastSessionId.isNotEmpty) {
+      List<WorkoutSet> recentSets = grouped[recentPastSessionId]!;
+      for (var oldSet in recentSets) {
+        WorkoutSet newSet = oldSet.copyWith(
+          id: const Uuid().v4(),
+          sessionId: todaySessionId,
+          isCompleted: false,
+        );
+        await workoutSetProvider.addWorkoutSet(newSet);
+      }
+    }
+    await prefs.setBool(addedKey, true);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -109,6 +158,19 @@ class HomeScreen extends StatelessWidget {
                       Provider.of<WorkoutProvider>(context, listen: false);
                   Workout workout =
                       workoutProvider.getWorkoutById(activeWorkoutId)!;
+                  if (workoutData.isNotEmpty) {
+                    final workoutSetProvider =
+                        Provider.of<WorkoutSetProvider>(context, listen: false);
+                    List<WorkoutSet> allSets = workoutSetProvider
+                        .getAllWorkoutSetsForWorkout(workoutData['id']);
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      _ensureTodaySetsExist(
+                        allSets: allSets,
+                        workoutId: workoutData['id'],
+                        workoutSetProvider: workoutSetProvider,
+                      );
+                    });
+                  }
                   return ListView(
                     padding:
                         const EdgeInsets.only(left: 10, right: 10, top: 45),

@@ -70,15 +70,17 @@ class WorkoutSets extends Table {
   TextColumn get exerciseId => text()
       .customConstraint('NOT NULL REFERENCES Exercises(id)')(); // Foreign Key
 
-  IntColumn get set => integer()();
+  TextColumn get sessionId => text().withLength(
+      min: 1, max: 36)(); // Unique session identifier (date or UUID)
+
+  IntColumn get set =>
+      integer()(); // 0 = warmup, 1..n = normal sets, last = drop set
 
   IntColumn get reps => integer()();
 
   RealColumn get weight => real()();
 
-  /// Store completed dates as a comma-separated string (e.g., "2024-04-01,2024-04-02")
-  TextColumn get isCompleted => text()
-      .withDefault(const Constant(''))(); // Empty string means no completion
+  BoolColumn get isCompleted => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id}; // Primary key

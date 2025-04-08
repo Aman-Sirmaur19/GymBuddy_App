@@ -1162,6 +1162,15 @@ class $WorkoutSetsTable extends WorkoutSets
       type: DriftSqlType.string,
       requiredDuringInsert: true,
       $customConstraints: 'NOT NULL REFERENCES Exercises(id)');
+  static const VerificationMeta _sessionIdMeta =
+      const VerificationMeta('sessionId');
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+      'session_id', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 1, maxTextLength: 36),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
   static const VerificationMeta _setMeta = const VerificationMeta('set');
   @override
   late final GeneratedColumn<int> set = GeneratedColumn<int>(
@@ -1180,14 +1189,16 @@ class $WorkoutSetsTable extends WorkoutSets
   static const VerificationMeta _isCompletedMeta =
       const VerificationMeta('isCompleted');
   @override
-  late final GeneratedColumn<String> isCompleted = GeneratedColumn<String>(
+  late final GeneratedColumn<bool> isCompleted = GeneratedColumn<bool>(
       'is_completed', aliasedName, false,
-      type: DriftSqlType.string,
+      type: DriftSqlType.bool,
       requiredDuringInsert: false,
-      defaultValue: const Constant(''));
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'CHECK ("is_completed" IN (0, 1))'),
+      defaultValue: const Constant(false));
   @override
   List<GeneratedColumn> get $columns =>
-      [id, workoutId, exerciseId, set, reps, weight, isCompleted];
+      [id, workoutId, exerciseId, sessionId, set, reps, weight, isCompleted];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1216,6 +1227,12 @@ class $WorkoutSetsTable extends WorkoutSets
               data['exercise_id']!, _exerciseIdMeta));
     } else if (isInserting) {
       context.missing(_exerciseIdMeta);
+    }
+    if (data.containsKey('session_id')) {
+      context.handle(_sessionIdMeta,
+          sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta));
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
     }
     if (data.containsKey('set')) {
       context.handle(
@@ -1256,6 +1273,8 @@ class $WorkoutSetsTable extends WorkoutSets
           .read(DriftSqlType.string, data['${effectivePrefix}workout_id'])!,
       exerciseId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}exercise_id'])!,
+      sessionId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}session_id'])!,
       set: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}set'])!,
       reps: attachedDatabase.typeMapping
@@ -1263,7 +1282,7 @@ class $WorkoutSetsTable extends WorkoutSets
       weight: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}weight'])!,
       isCompleted: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}is_completed'])!,
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_completed'])!,
     );
   }
 
@@ -1277,16 +1296,16 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
   final String id;
   final String workoutId;
   final String exerciseId;
+  final String sessionId;
   final int set;
   final int reps;
   final double weight;
-
-  /// Store completed dates as a comma-separated string (e.g., "2024-04-01,2024-04-02")
-  final String isCompleted;
+  final bool isCompleted;
   const WorkoutSet(
       {required this.id,
       required this.workoutId,
       required this.exerciseId,
+      required this.sessionId,
       required this.set,
       required this.reps,
       required this.weight,
@@ -1297,10 +1316,11 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
     map['id'] = Variable<String>(id);
     map['workout_id'] = Variable<String>(workoutId);
     map['exercise_id'] = Variable<String>(exerciseId);
+    map['session_id'] = Variable<String>(sessionId);
     map['set'] = Variable<int>(set);
     map['reps'] = Variable<int>(reps);
     map['weight'] = Variable<double>(weight);
-    map['is_completed'] = Variable<String>(isCompleted);
+    map['is_completed'] = Variable<bool>(isCompleted);
     return map;
   }
 
@@ -1309,6 +1329,7 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
       id: Value(id),
       workoutId: Value(workoutId),
       exerciseId: Value(exerciseId),
+      sessionId: Value(sessionId),
       set: Value(set),
       reps: Value(reps),
       weight: Value(weight),
@@ -1323,10 +1344,11 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
       id: serializer.fromJson<String>(json['id']),
       workoutId: serializer.fromJson<String>(json['workoutId']),
       exerciseId: serializer.fromJson<String>(json['exerciseId']),
+      sessionId: serializer.fromJson<String>(json['sessionId']),
       set: serializer.fromJson<int>(json['set']),
       reps: serializer.fromJson<int>(json['reps']),
       weight: serializer.fromJson<double>(json['weight']),
-      isCompleted: serializer.fromJson<String>(json['isCompleted']),
+      isCompleted: serializer.fromJson<bool>(json['isCompleted']),
     );
   }
   @override
@@ -1336,10 +1358,11 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
       'id': serializer.toJson<String>(id),
       'workoutId': serializer.toJson<String>(workoutId),
       'exerciseId': serializer.toJson<String>(exerciseId),
+      'sessionId': serializer.toJson<String>(sessionId),
       'set': serializer.toJson<int>(set),
       'reps': serializer.toJson<int>(reps),
       'weight': serializer.toJson<double>(weight),
-      'isCompleted': serializer.toJson<String>(isCompleted),
+      'isCompleted': serializer.toJson<bool>(isCompleted),
     };
   }
 
@@ -1347,14 +1370,16 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
           {String? id,
           String? workoutId,
           String? exerciseId,
+          String? sessionId,
           int? set,
           int? reps,
           double? weight,
-          String? isCompleted}) =>
+          bool? isCompleted}) =>
       WorkoutSet(
         id: id ?? this.id,
         workoutId: workoutId ?? this.workoutId,
         exerciseId: exerciseId ?? this.exerciseId,
+        sessionId: sessionId ?? this.sessionId,
         set: set ?? this.set,
         reps: reps ?? this.reps,
         weight: weight ?? this.weight,
@@ -1366,6 +1391,7 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
           ..write('id: $id, ')
           ..write('workoutId: $workoutId, ')
           ..write('exerciseId: $exerciseId, ')
+          ..write('sessionId: $sessionId, ')
           ..write('set: $set, ')
           ..write('reps: $reps, ')
           ..write('weight: $weight, ')
@@ -1375,8 +1401,8 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, workoutId, exerciseId, set, reps, weight, isCompleted);
+  int get hashCode => Object.hash(
+      id, workoutId, exerciseId, sessionId, set, reps, weight, isCompleted);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1384,6 +1410,7 @@ class WorkoutSet extends DataClass implements Insertable<WorkoutSet> {
           other.id == this.id &&
           other.workoutId == this.workoutId &&
           other.exerciseId == this.exerciseId &&
+          other.sessionId == this.sessionId &&
           other.set == this.set &&
           other.reps == this.reps &&
           other.weight == this.weight &&
@@ -1394,15 +1421,17 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
   final Value<String> id;
   final Value<String> workoutId;
   final Value<String> exerciseId;
+  final Value<String> sessionId;
   final Value<int> set;
   final Value<int> reps;
   final Value<double> weight;
-  final Value<String> isCompleted;
+  final Value<bool> isCompleted;
   final Value<int> rowid;
   const WorkoutSetsCompanion({
     this.id = const Value.absent(),
     this.workoutId = const Value.absent(),
     this.exerciseId = const Value.absent(),
+    this.sessionId = const Value.absent(),
     this.set = const Value.absent(),
     this.reps = const Value.absent(),
     this.weight = const Value.absent(),
@@ -1413,6 +1442,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
     required String id,
     required String workoutId,
     required String exerciseId,
+    required String sessionId,
     required int set,
     required int reps,
     required double weight,
@@ -1421,6 +1451,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
   })  : id = Value(id),
         workoutId = Value(workoutId),
         exerciseId = Value(exerciseId),
+        sessionId = Value(sessionId),
         set = Value(set),
         reps = Value(reps),
         weight = Value(weight);
@@ -1428,16 +1459,18 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
     Expression<String>? id,
     Expression<String>? workoutId,
     Expression<String>? exerciseId,
+    Expression<String>? sessionId,
     Expression<int>? set,
     Expression<int>? reps,
     Expression<double>? weight,
-    Expression<String>? isCompleted,
+    Expression<bool>? isCompleted,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (workoutId != null) 'workout_id': workoutId,
       if (exerciseId != null) 'exercise_id': exerciseId,
+      if (sessionId != null) 'session_id': sessionId,
       if (set != null) 'set': set,
       if (reps != null) 'reps': reps,
       if (weight != null) 'weight': weight,
@@ -1450,15 +1483,17 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
       {Value<String>? id,
       Value<String>? workoutId,
       Value<String>? exerciseId,
+      Value<String>? sessionId,
       Value<int>? set,
       Value<int>? reps,
       Value<double>? weight,
-      Value<String>? isCompleted,
+      Value<bool>? isCompleted,
       Value<int>? rowid}) {
     return WorkoutSetsCompanion(
       id: id ?? this.id,
       workoutId: workoutId ?? this.workoutId,
       exerciseId: exerciseId ?? this.exerciseId,
+      sessionId: sessionId ?? this.sessionId,
       set: set ?? this.set,
       reps: reps ?? this.reps,
       weight: weight ?? this.weight,
@@ -1479,6 +1514,9 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
     if (exerciseId.present) {
       map['exercise_id'] = Variable<String>(exerciseId.value);
     }
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
     if (set.present) {
       map['set'] = Variable<int>(set.value);
     }
@@ -1489,7 +1527,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
       map['weight'] = Variable<double>(weight.value);
     }
     if (isCompleted.present) {
-      map['is_completed'] = Variable<String>(isCompleted.value);
+      map['is_completed'] = Variable<bool>(isCompleted.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -1503,6 +1541,7 @@ class WorkoutSetsCompanion extends UpdateCompanion<WorkoutSet> {
           ..write('id: $id, ')
           ..write('workoutId: $workoutId, ')
           ..write('exerciseId: $exerciseId, ')
+          ..write('sessionId: $sessionId, ')
           ..write('set: $set, ')
           ..write('reps: $reps, ')
           ..write('weight: $weight, ')
