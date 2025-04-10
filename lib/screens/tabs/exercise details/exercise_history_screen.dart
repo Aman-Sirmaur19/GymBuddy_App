@@ -105,8 +105,11 @@ class _ExerciseHistoryScreenState extends State<ExerciseHistoryScreen> {
   Widget build(BuildContext context) {
     final workoutSetProvider =
         Provider.of<WorkoutSetProvider>(context, listen: false);
-    List<WorkoutSet> workoutSets = workoutSetProvider.getWorkoutSetsForExercise(
-        widget.workoutId, widget.exercise.id);
+    String todaySessionId = DateTime.now().toIso8601String().split('T').first;
+    List<WorkoutSet> workoutSets = workoutSetProvider
+        .getWorkoutSetsForExercise(widget.workoutId, widget.exercise.id)
+        .where((set) => set.sessionId == todaySessionId)
+        .toList();
     return ListView(
       physics: const BouncingScrollPhysics(),
       children: [

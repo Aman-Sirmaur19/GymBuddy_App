@@ -181,15 +181,18 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
                   ),
                 ),
                 TextButton(
-                    onPressed: () => Navigator.push(
-                        context,
-                        CupertinoPageRoute(
-                            builder: (context) =>
-                                WorkoutSearchScreen(weekday: widget.weekday))),
-                    child: const Text(
-                      'Add / Remove',
-                      style: TextStyle(color: Colors.deepPurpleAccent),
-                    )),
+                  onPressed: () => Navigator.push(
+                    context,
+                    CupertinoPageRoute(
+                      builder: (context) =>
+                          WorkoutSearchScreen(weekday: widget.weekday),
+                    ),
+                  ),
+                  child: const Text(
+                    'Add / Remove',
+                    style: TextStyle(color: Colors.deepPurpleAccent),
+                  ),
+                ),
               ],
             ),
             Expanded(
@@ -223,39 +226,61 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
                         if (b['id'] == allData['activeWorkout']) return 1;
                         return 0;
                       });
-                      return _isGridView
-                          ? GridView.builder(
-                              physics: const BouncingScrollPhysics(),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                mainAxisSpacing: 8,
-                                crossAxisSpacing: 8,
-                                mainAxisExtent: 120,
-                              ),
-                              itemCount: workouts.length,
-                              itemBuilder: (context, index) {
-                                return _buildWorkoutCard(
-                                  workouts[index],
-                                  workouts[index]['id'] ==
-                                      allData['activeWorkout'],
-                                );
-                              },
-                            )
-                          : ListView.builder(
-                              physics: const BouncingScrollPhysics(),
-                              itemCount: workouts.length,
-                              itemBuilder: (context, index) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 8),
-                                  child: _buildWorkoutCard(
-                                    workouts[index],
-                                    workouts[index]['id'] ==
-                                        allData['activeWorkout'],
+
+                      bool hasActiveWorkout = workouts
+                          .any((w) => w['id'] == allData['activeWorkout']);
+
+                      return Column(
+                        children: [
+                          Expanded(
+                            child: _isGridView
+                                ? GridView.builder(
+                                    physics: const BouncingScrollPhysics(),
+                                    gridDelegate:
+                                        const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 2,
+                                      mainAxisSpacing: 8,
+                                      crossAxisSpacing: 8,
+                                      mainAxisExtent: 120,
+                                    ),
+                                    itemCount: workouts.length,
+                                    itemBuilder: (context, index) {
+                                      return _buildWorkoutCard(
+                                        workouts[index],
+                                        workouts[index]['id'] ==
+                                            allData['activeWorkout'],
+                                      );
+                                    },
+                                  )
+                                : ListView.builder(
+                                    physics: const BouncingScrollPhysics(),
+                                    itemCount: workouts.length,
+                                    itemBuilder: (context, index) {
+                                      return Padding(
+                                        padding:
+                                            const EdgeInsets.only(bottom: 8),
+                                        child: _buildWorkoutCard(
+                                          workouts[index],
+                                          workouts[index]['id'] ==
+                                              allData['activeWorkout'],
+                                        ),
+                                      );
+                                    },
                                   ),
-                                );
-                              },
-                            );
+                          ),
+                          if (!hasActiveWorkout)
+                            const Padding(
+                              padding: EdgeInsets.only(top: 8),
+                              child: Text(
+                                'Activate a workout 💪🏻',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
                     },
                   );
                 },

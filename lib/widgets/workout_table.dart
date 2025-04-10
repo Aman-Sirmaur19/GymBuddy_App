@@ -130,8 +130,11 @@ class _WorkoutTableState extends State<WorkoutTable> {
     final exerciseProvider = Provider.of<ExerciseProvider>(context);
     final exercise = exerciseProvider.getExerciseById(widget.exerciseId)!;
     final workoutSetProvider = Provider.of<WorkoutSetProvider>(context);
-    List<WorkoutSet> workoutSets = workoutSetProvider.getWorkoutSetsForExercise(
-        widget.workoutId, widget.exerciseId);
+    String todaySessionId = DateTime.now().toIso8601String().split('T').first;
+    List<WorkoutSet> workoutSets = workoutSetProvider
+        .getWorkoutSetsForExercise(widget.workoutId, widget.exerciseId)
+        .where((set) => set.sessionId == todaySessionId)
+        .toList();
     _allSetsCompleted =
         workoutSets.isNotEmpty && workoutSets.every((set) => set.isCompleted);
     return Container(

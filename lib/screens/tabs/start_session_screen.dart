@@ -44,8 +44,11 @@ class StartSessionScreen extends StatelessWidget {
         .where((Exercise exercise) => exercise.id.isNotEmpty)
         .toList();
     int exercisesLeft = exercises.where((Exercise exercise) {
-      List<WorkoutSet> sets = workoutSetProvider.getWorkoutSetsForExercise(
-          workoutData['id'], exercise.id);
+      String todaySessionId = DateTime.now().toIso8601String().split('T').first;
+      List<WorkoutSet> sets = workoutSetProvider
+          .getWorkoutSetsForExercise(workoutData['id'], exercise.id)
+          .where((set) => set.sessionId == todaySessionId)
+          .toList();
 
       return sets.any((set) => !set.isCompleted);
     }).length;

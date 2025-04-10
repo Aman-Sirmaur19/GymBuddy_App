@@ -91,10 +91,14 @@ class _ExercisesTabState extends State<ExercisesTab> {
                       final exercise =
                           exerciseProvider.getExerciseById(exerciseIds[index])!;
 
-                      // Get all workout sets for this exercise
-                      final workoutSets =
-                          workoutSetProvider.getWorkoutSetsForExercise(
-                              widget.workoutData['id'], exercise.id);
+                      // Get all today's workout sets for this exercise
+                      String todaySessionId =
+                          DateTime.now().toIso8601String().split('T').first;
+                      final workoutSets = workoutSetProvider
+                          .getWorkoutSetsForExercise(
+                              widget.workoutData['id'], exercise.id)
+                          .where((set) => set.sessionId == todaySessionId)
+                          .toList();
                       final totalSets = workoutSets.length;
                       final totalReps =
                           workoutSets.fold(0, (sum, ws) => sum + ws.reps);

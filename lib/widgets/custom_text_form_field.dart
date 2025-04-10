@@ -27,6 +27,8 @@ class CustomTextFormField extends StatelessWidget {
       controller: controller,
       keyboardType: keyboardType,
       onChanged: onChanged,
+      maxLines:
+          hintText == 'Add note...' || hintText == 'Edit note...' ? null : 1,
       onFieldSubmitted: onFieldSubmitted,
       cursorColor: Colors.deepPurpleAccent,
       style: const TextStyle(
@@ -60,6 +62,7 @@ class CustomTextFormField extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: Colors.deepPurpleAccent),
         ),
+        contentPadding: EdgeInsets.zero,
       ),
     );
   }

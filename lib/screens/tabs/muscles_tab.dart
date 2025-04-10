@@ -42,8 +42,12 @@ class MusclesTab extends StatelessWidget {
                   exerciseProvider.getExerciseById(exerciseId);
               if (exercise == null) continue;
 
+              String todaySessionId =
+                  DateTime.now().toIso8601String().split('T').first;
               final List<WorkoutSet> workoutSets = workoutSetProvider
-                  .getWorkoutSetsForExercise(workoutData['id'], exercise.id);
+                  .getWorkoutSetsForExercise(workoutData['id'], exercise.id)
+                  .where((set) => set.sessionId == todaySessionId)
+                  .toList();
               final int totalSets = workoutSets.length;
               final int totalReps =
                   workoutSets.fold(0, (sum, ws) => sum + ws.reps);
