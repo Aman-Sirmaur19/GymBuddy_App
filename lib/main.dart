@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'providers/journal_provider.dart';
 import 'utils/theme.dart';
 import 'database/database.dart';
 import 'providers/user_provider.dart';
@@ -29,12 +30,14 @@ void main() async {
   final workoutProvider = WorkoutProvider(database);
   final exerciseProvider = ExerciseProvider(database);
   final workoutSetProvider = WorkoutSetProvider(database);
+  final journalProvider = JournalProvider(database);
 
   await userProvider.loadUser();
   await weekdayProvider.loadWeekdays();
   await workoutProvider.loadWorkouts();
   await exerciseProvider.loadAllExercises();
   await workoutSetProvider.loadWorkoutSets();
+  await journalProvider.getAllJournals();
 
   runApp(MyApp(
     userProvider: userProvider,
@@ -42,6 +45,7 @@ void main() async {
     workoutProvider: workoutProvider,
     exerciseProvider: exerciseProvider,
     workoutSetProvider: workoutSetProvider,
+    journalProvider: journalProvider,
   ));
 }
 
@@ -61,6 +65,7 @@ class MyApp extends StatelessWidget {
   final WorkoutProvider workoutProvider;
   final ExerciseProvider exerciseProvider;
   final WorkoutSetProvider workoutSetProvider;
+  final JournalProvider journalProvider;
 
   const MyApp({
     super.key,
@@ -69,6 +74,7 @@ class MyApp extends StatelessWidget {
     required this.workoutProvider,
     required this.exerciseProvider,
     required this.workoutSetProvider,
+    required this.journalProvider,
   });
 
   Future<Widget> _getInitialScreen() async {
@@ -95,6 +101,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<ExerciseProvider>.value(value: exerciseProvider),
         ChangeNotifierProvider<WorkoutSetProvider>.value(
             value: workoutSetProvider),
+        ChangeNotifierProvider<JournalProvider>.value(value: journalProvider),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

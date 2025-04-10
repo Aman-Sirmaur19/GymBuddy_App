@@ -100,20 +100,49 @@ class WeekdayWorkouts extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-@DriftDatabase(
-    tables: [Users, Exercises, Workouts, WorkoutSets, WeekdayWorkouts])
+@DataClassName('JournalEntry')
+class Journals extends Table {
+  TextColumn get id => text().withLength(min: 1, max: 36)();
+
+  TextColumn get note => text()();
+
+  TextColumn get date => text()(); // e.g. 2025-04-06
+  TextColumn get time => text()(); // e.g. 2025-04-07T15:45:00.000Z
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DriftDatabase(tables: [
+  Users,
+  Exercises,
+  Workouts,
+  WorkoutSets,
+  WeekdayWorkouts,
+  Journals,
+])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(QueryExecutor e) : super(e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2; // increment when schema changes
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          if (from == 1) {
+            await m.createTable(journals); // create the new table
+          }
+        },
+      );
 
   Future<User?> getUser() async {
     return select(users).getSingleOrNull();
   }
 
   Future<void> updateUser(UsersCompanion user) async {
-    into(users).insertOnConflictUpdate(user);
+    await into(users).insertOnConflictUpdate(user);
   }
 
   Future<List<Exercise>> getAllExercises() async {
@@ -138,7 +167,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<String> addWorkout(WorkoutsCompanion workout) async {
-    into(workouts).insertOnConflictUpdate(workout);
+    await into(workouts).insertOnConflictUpdate(workout);
     return workout.id.value;
   }
 
@@ -148,7 +177,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> deleteWorkout(String id) async {
-    (delete(workouts)..where((w) => w.id.equals(id))).go();
+    await (delete(workouts)..where((w) => w.id.equals(id))).go();
   }
 
   Future<List<WorkoutSet>> getAllWorkoutSets() async {
@@ -156,7 +185,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<String> addWorkoutSet(WorkoutSetsCompanion workoutSet) async {
-    into(workoutSets).insertOnConflictUpdate(workoutSet);
+    await into(workoutSets).insertOnConflictUpdate(workoutSet);
     return workoutSet.id.value;
   }
 
@@ -167,7 +196,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> deleteWorkoutSet(String id) async {
-    (delete(workoutSets)..where((ws) => ws.id.equals(id))).go();
+    await (delete(workoutSets)..where((ws) => ws.id.equals(id))).go();
   }
 
   Future<List<WeekdayWorkout>> getAllWeekdays() async {
@@ -188,5 +217,25 @@ class AppDatabase extends _$AppDatabase {
 
   Future<List<Workout>> getWorkoutsByIds(List<String> ids) async {
     return (select(workouts)..where((w) => w.id.isIn(ids))).get();
+  }
+
+  Future<List<JournalEntry>> getAllJournals() async {
+    return select(journals).get();
+  }
+
+  Future<void> insertJournal(JournalsCompanion journal) async {
+    await into(journals).insertOnConflictUpdate(journal);
+  }
+
+  Future<void> deleteJournalById(String id) async {
+    await (delete(journals)..where((j) => j.id.equals(id))).go();
+  }
+
+  Future<List<JournalEntry>> getJournalsByDate(DateTime date) async {
+    final dateString = date.toIso8601String().split('T').first;
+    return (select(journals)
+          ..where((j) => j.date.equals(dateString))
+          ..orderBy([(j) => OrderingTerm.desc(j.time)]))
+        .get();
   }
 }

@@ -1856,6 +1856,265 @@ class WeekdayWorkoutsCompanion extends UpdateCompanion<WeekdayWorkout> {
   }
 }
 
+class $JournalsTable extends Journals
+    with TableInfo<$JournalsTable, JournalEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $JournalsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      additionalChecks:
+          GeneratedColumn.checkTextLength(minTextLength: 1, maxTextLength: 36),
+      type: DriftSqlType.string,
+      requiredDuringInsert: true);
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+      'note', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<String> date = GeneratedColumn<String>(
+      'date', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _timeMeta = const VerificationMeta('time');
+  @override
+  late final GeneratedColumn<String> time = GeneratedColumn<String>(
+      'time', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [id, note, date, time];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'journals';
+  @override
+  VerificationContext validateIntegrity(Insertable<JournalEntry> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+          _noteMeta, note.isAcceptableOrUnknown(data['note']!, _noteMeta));
+    } else if (isInserting) {
+      context.missing(_noteMeta);
+    }
+    if (data.containsKey('date')) {
+      context.handle(
+          _dateMeta, date.isAcceptableOrUnknown(data['date']!, _dateMeta));
+    } else if (isInserting) {
+      context.missing(_dateMeta);
+    }
+    if (data.containsKey('time')) {
+      context.handle(
+          _timeMeta, time.isAcceptableOrUnknown(data['time']!, _timeMeta));
+    } else if (isInserting) {
+      context.missing(_timeMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  JournalEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return JournalEntry(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      note: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}note'])!,
+      date: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}date'])!,
+      time: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}time'])!,
+    );
+  }
+
+  @override
+  $JournalsTable createAlias(String alias) {
+    return $JournalsTable(attachedDatabase, alias);
+  }
+}
+
+class JournalEntry extends DataClass implements Insertable<JournalEntry> {
+  final String id;
+  final String note;
+  final String date;
+  final String time;
+  const JournalEntry(
+      {required this.id,
+      required this.note,
+      required this.date,
+      required this.time});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['note'] = Variable<String>(note);
+    map['date'] = Variable<String>(date);
+    map['time'] = Variable<String>(time);
+    return map;
+  }
+
+  JournalsCompanion toCompanion(bool nullToAbsent) {
+    return JournalsCompanion(
+      id: Value(id),
+      note: Value(note),
+      date: Value(date),
+      time: Value(time),
+    );
+  }
+
+  factory JournalEntry.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return JournalEntry(
+      id: serializer.fromJson<String>(json['id']),
+      note: serializer.fromJson<String>(json['note']),
+      date: serializer.fromJson<String>(json['date']),
+      time: serializer.fromJson<String>(json['time']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'note': serializer.toJson<String>(note),
+      'date': serializer.toJson<String>(date),
+      'time': serializer.toJson<String>(time),
+    };
+  }
+
+  JournalEntry copyWith(
+          {String? id, String? note, String? date, String? time}) =>
+      JournalEntry(
+        id: id ?? this.id,
+        note: note ?? this.note,
+        date: date ?? this.date,
+        time: time ?? this.time,
+      );
+  @override
+  String toString() {
+    return (StringBuffer('JournalEntry(')
+          ..write('id: $id, ')
+          ..write('note: $note, ')
+          ..write('date: $date, ')
+          ..write('time: $time')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, note, date, time);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is JournalEntry &&
+          other.id == this.id &&
+          other.note == this.note &&
+          other.date == this.date &&
+          other.time == this.time);
+}
+
+class JournalsCompanion extends UpdateCompanion<JournalEntry> {
+  final Value<String> id;
+  final Value<String> note;
+  final Value<String> date;
+  final Value<String> time;
+  final Value<int> rowid;
+  const JournalsCompanion({
+    this.id = const Value.absent(),
+    this.note = const Value.absent(),
+    this.date = const Value.absent(),
+    this.time = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  JournalsCompanion.insert({
+    required String id,
+    required String note,
+    required String date,
+    required String time,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        note = Value(note),
+        date = Value(date),
+        time = Value(time);
+  static Insertable<JournalEntry> custom({
+    Expression<String>? id,
+    Expression<String>? note,
+    Expression<String>? date,
+    Expression<String>? time,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (note != null) 'note': note,
+      if (date != null) 'date': date,
+      if (time != null) 'time': time,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  JournalsCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? note,
+      Value<String>? date,
+      Value<String>? time,
+      Value<int>? rowid}) {
+    return JournalsCompanion(
+      id: id ?? this.id,
+      note: note ?? this.note,
+      date: date ?? this.date,
+      time: time ?? this.time,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<String>(date.value);
+    }
+    if (time.present) {
+      map['time'] = Variable<String>(time.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('JournalsCompanion(')
+          ..write('id: $id, ')
+          ..write('note: $note, ')
+          ..write('date: $date, ')
+          ..write('time: $time, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   late final $UsersTable users = $UsersTable(this);
@@ -1864,10 +2123,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $WorkoutSetsTable workoutSets = $WorkoutSetsTable(this);
   late final $WeekdayWorkoutsTable weekdayWorkouts =
       $WeekdayWorkoutsTable(this);
+  late final $JournalsTable journals = $JournalsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities =>
-      [users, exercises, workouts, workoutSets, weekdayWorkouts];
+      [users, exercises, workouts, workoutSets, weekdayWorkouts, journals];
 }
